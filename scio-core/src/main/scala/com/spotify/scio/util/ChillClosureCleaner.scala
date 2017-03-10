@@ -37,7 +37,7 @@ package com.spotify.scio.util
 import _root_.java.lang.reflect.Field
 
 import org.apache.xbean.asm5.Opcodes._
-import org.apache.xbean.asm5.{ClassReader, ClassVisitor, MethodVisitor, Type}
+import org.apache.xbean.asm5._
 
 import scala.annotation.tailrec
 import scala.collection.mutable.{Map => MMap, Set => MSet}
@@ -167,6 +167,33 @@ private[util] object ChillClosureCleaner {
   }
 
   def apply(obj: AnyRef): Unit = {
+    val cls = obj.getClass
+    def p(cls: Class[_], i: Int = 0): Unit = if (i < 10) {
+      cls.getDeclaredFields.foreach { f =>
+        println(" " * i * 4 + f.getName + " " + f.getType)
+        p(f.getType, i + 1)
+      }
+    }
+    p(cls)
+    cls.getDeclaredFields.foreach { f =>
+      if (f.getName == "arg$1") {
+        println("!!! MODULE")
+        f.setAccessible(true)
+        f.set(obj, instantiateClass(f.getType))
+      }
+    }
+
+    val v = new ClassVisitor(ASM5) {
+      override def visitField(access: Int, name: String, desc: String, signature: String,
+                              value: scala.Any): FieldVisitor = {
+        println(s"XXXXX $access [$name] [$desc] [$signature] $value")
+        return super.visitField(access, name, desc, signature, value)
+      }
+    }
+    new ClassReader(cls.getName).accept(v, 0)
+
+    // ================================================================================
+
     val newCleanedOuter = allocCleanedOuter(obj)
     // I know the cool kids use Options, but this code
     // will avoid an allocation in the usual case of
@@ -178,9 +205,10 @@ private[util] object ChillClosureCleaner {
    * Return a new bottom-most $outer instance of this obj
    * with only the accessed fields set in the $outer parent chain
    */
-  private def allocCleanedOuter(in: AnyRef): AnyRef =
+  private def allocCleanedOuter(in: AnyRef): AnyRef = {
     // Go top down filling in the actual accessed fields:
-    getOutersOf(in)
+    val o = getOutersOf(in)
+    o
       // the outer-most-outer is null:
       .foldLeft(null: AnyRef) { (prevOuter, clsData) =>
         val (thisOuterCls, realOuter) = clsData
@@ -198,6 +226,7 @@ private[util] object ChillClosureCleaner {
         // Now return this populated object for the next outer instance to use
         nextOuter
       }
+  }
 
   // Set the given field in newv to the same value as old
   private def setFromTo(f: Field, old: AnyRef, newv: AnyRef) {
