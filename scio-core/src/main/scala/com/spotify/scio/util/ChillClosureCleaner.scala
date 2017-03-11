@@ -72,8 +72,9 @@ private[util] object ChillClosureCleaner {
         c.getDeclaredFields.find { f =>
           val scala211Outer = f.getName == OUTER
           val scala212Outer =
-            f.getType.getName == c.getName.split("\\$\\$").head && f.getName.startsWith("arg$")
-          scala211Outer || scala212Outer
+            c.getName.startsWith(f.getType.getName) && f.getName.startsWith("arg$")
+          val module = f.getName == "MODULE$"
+          scala211Outer || scala212Outer || module
         })
 
   /**
