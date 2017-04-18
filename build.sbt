@@ -53,6 +53,7 @@ val scalatestVersion = "3.0.1"
 val shapelessDatatypeVersion = "0.1.2"
 val slf4jVersion = "1.7.23"
 val sparkeyVersion = "2.1.3"
+val tensorFlowVersion = "1.1.0-rc1"
 
 val scalaMeterFramework = new TestFramework("org.scalameter.ScalaMeterFramework")
 
@@ -300,6 +301,7 @@ lazy val scioExtra: Project = Project(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "org.scalanlp" %% "breeze" % breezeVersion,
     "info.debatty" % "java-lsh" % javaLshVersion,
+    "org.tensorflow" % "tensorflow" % tensorFlowVersion ,
     "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test"
   )
