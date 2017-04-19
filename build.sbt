@@ -199,7 +199,8 @@ lazy val root: Project = Project(
   scioHdfs,
   scioRepl,
   scioExamples,
-  scioSchemas
+  scioSchemas,
+  scioTensorflow
 )
 
 lazy val scioCore: Project = Project(
@@ -220,10 +221,6 @@ lazy val scioCore: Project = Project(
     "com.google.auto.service" % "auto-service" % autoServiceVersion,
     "me.lyh" %% "protobuf-generic" % protobufGenericVersion,
     "junit" % "junit" % junitVersion % "provided"
-  ),
-  compileOrder := CompileOrder.JavaThenScala,
-  PB.targets in Compile := Seq(
-    PB.gens.java -> (sourceManaged in Compile).value / "compiled_protobuf"
   )
 ).dependsOn(
   scioBigQuery
@@ -301,7 +298,6 @@ lazy val scioExtra: Project = Project(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "org.scalanlp" %% "breeze" % breezeVersion,
     "info.debatty" % "java-lsh" % javaLshVersion,
-    "org.tensorflow" % "tensorflow" % tensorFlowVersion ,
     "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test"
   )
@@ -309,6 +305,24 @@ lazy val scioExtra: Project = Project(
   scioCore,
   scioTest % "it,test"
 ).configs(IntegrationTest)
+
+lazy val scioTensorflow: Project = Project(
+  "scio-tensorflow",
+  file("scio-tensorflow")
+).settings(
+  commonSettings,
+  description := "Scio add-on for Tensorflow",
+  libraryDependencies ++= Seq(
+    "org.tensorflow" % "tensorflow" % tensorFlowVersion
+  ),
+  compileOrder := CompileOrder.JavaThenScala,
+  PB.targets in Compile := Seq(
+    PB.gens.java -> (sourceManaged in Compile).value / "compiled_protobuf"
+  )
+).dependsOn(
+  scioCore,
+  scioTest % "test->test"
+)
 
 lazy val scioHdfs: Project = Project(
   "scio-hdfs",
