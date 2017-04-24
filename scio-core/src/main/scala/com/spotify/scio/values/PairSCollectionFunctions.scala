@@ -29,6 +29,41 @@ import org.apache.beam.sdk.values.{KV, PCollection, PCollectionView}
 
 import scala.reflect.ClassTag
 
+// scalastyle:off
+object PairSCollectionFunctions {
+
+  def optimalBloomFilterWidth(numEntries: Long, fpProb: Double): (Int, Int, Int) = {
+    // double to int rounding error happens when numEntries > (1 << 27)
+    // set numEntries upper bound to 1 << 27 to avoid high false positive
+    def estimateWidth(numEntries: Int, fpProb: Double): Int =
+      math.ceil(-1 * numEntries * math.log(fpProb) / math.log(2) / math.log(2)).toInt
+
+    // upper bound of n as 2^x
+    def upper(n: Int): Int = 1 << (0 to 27).find(1 << _ >= n).get
+
+    // cap size between [minSize, maxSize] and find upper bound of 2^x
+    val (minSize, maxSize) = (2048, 1 << 27)
+    var size = upper(math.max(math.min(numEntries, maxSize).toInt, minSize))
+
+    var width = estimateWidth(size, fpProb)
+    while (width == Int.MaxValue) {
+      size = size >> 1
+      width = estimateWidth(size, fpProb)
+    }
+    (width, size, (numEntries / size).toInt + 1)
+  }
+
+  def main(args: Array[String]): Unit = {
+    val fpProbs = Seq(0.1, 0.01, 0.001)
+    val numEntries = Seq(1E12.toLong, 1E11.toLong, 1E10.toLong, 1E9.toLong, 1E8.toLong, 1E7.toLong)
+    for (n <- numEntries; p <- fpProbs) {
+      val (w, s, c) = optimalBloomFilterWidth(n, p)
+      println(s"numEntries = $n, fpProb = $p, width = $w, size = $s, count = $c")
+    }
+  }
+
+}
+
 // scalastyle:off number.of.methods
 /**
  * Extra functions available on SCollections of (key, value) pairs through an implicit conversion.
