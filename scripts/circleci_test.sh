@@ -21,7 +21,7 @@ DIR_OF_SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ "$CI_PULL_REQUEST" = "" ]; then
   echo "Running test for branch: $CIRCLE_BRANCH"
-  openssl aes-256-cbc -d -in "$DIR_OF_SCRIPT/data-integration-test-2210ed0f609b.json.enc" -out "$DIR_OF_SCRIPT/data-integration-test-2210ed0f609b.json" -k $ENCRYPTKEY
+  openssl aes-256-cbc -d -in "$DIR_OF_SCRIPT/data-integration-test-3ef5881802cc.json.enc" -out "$DIR_OF_SCRIPT/data-integration-test-3ef5881802cc.json" -k $ENCRYPTKEY
   "$DIR_OF_SCRIPT/circleci_parallel_run.sh" 'sbt ++$CI_SCALA_VERSION -Dbigquery.project=data-integration-test '"-Dbigquery.secret=$DIR_OF_SCRIPT/data-integration-test-2210ed0f609b.json"' scalastyle coverage test it:test coverageReport coverageAggregate'
 else
   echo "Running test for PR: $CI_PULL_REQUEST"
